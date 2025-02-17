@@ -20,11 +20,11 @@ class CreateEmployeesTable extends Migration
             $table->string('identification')->unique();
             $table->string('address');
             $table->string('phone');
-            $table->string('country');
-            $table->string('city');
-            $table->unsignedBigInteger('boss_id')->nullable(); // Jefe inmediato
+            $table->unsignedBigInteger('city_id');
+            $table->unsignedBigInteger('boss_id')->nullable(); 
+            $table->foreign('city_id')->references('id')->on('cities')->onDelete('restrict');
             $table->foreign('boss_id')->references('id')->on('employees')->onDelete('set null');
-            $table->softDeletes(); // Para eliminación lógica
+            $table->softDeletes();
             $table->timestamps();
         });
     }

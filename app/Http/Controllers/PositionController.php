@@ -7,18 +7,19 @@ use Illuminate\Http\Request;
 
 class PositionController extends Controller
 {
-    public function indexAction()
+    
+    public function index()
     {
         $positions = Position::all();
         return view('positions.index', compact('positions'));
     }
 
-    public function createAction()
+    public function create()
     {
         return view('positions.create');
     }
 
-    public function storeAction(Request $request)
+    public function store(Request $request)
     {
         $request->validate([
             'name' => 'required|unique:positions',
@@ -29,17 +30,17 @@ class PositionController extends Controller
         return redirect()->route('positions.index')->with('success', 'Cargo creado correctamente');
     }
 
-    public function showAction(Position $position)
+    public function show(Position $position)
     {
         return view('positions.show', compact('position'));
     }
 
-    public function editAction(Position $position)
+    public function edit(Position $position)
     {
         return view('positions.edit', compact('position'));
     }
 
-    public function updateAction(Request $request, Position $position)
+    public function update(Request $request, Position $position)
     {
         $request->validate([
             'name' => "required|unique:positions,name,$position->id",
@@ -50,7 +51,7 @@ class PositionController extends Controller
         return redirect()->route('positions.index')->with('success', 'Cargo actualizado correctamente');
     }
 
-    public function deleteAction(Position $position)
+    public function delete(Position $position)
     {
         $position->delete();
         return redirect()->route('positions.index')->with('success', 'Cargo eliminado correctamente');

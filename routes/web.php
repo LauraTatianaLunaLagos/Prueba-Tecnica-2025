@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\EmployeeController;
+use App\Http\Controllers\PositionController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -16,3 +18,6 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     return view('welcome');
 });
+Route::resource('employees', EmployeeController::class);
+Route::resource('positions', PositionController::class);
+Route::get('/get-cities/{country_id}', [EmployeeController::class, 'getCities']);

@@ -4,24 +4,34 @@ namespace App\Http\Controllers;
 
 use App\Models\Employee;
 use App\Models\Position;
+use App\Models\City;
+use App\Models\Country;
 use Illuminate\Http\Request;
 
 class EmployeeController extends Controller
 {
-    public function indexAction()
+    /**
+     * lista de empleados
+     */
+    public function index()
     {
-        $employees = Employee::with('positions', 'boss')->get();
+        $employees = Employee::with('positions', 'boss', 'city')->get();
         return view('employees.index', compact('employees'));
     }
 
-    public function createAction()
+    /**
+     * crear un nuevo empleado
+     */
+    public function create()
     {
         $positions = Position::all();
         $bosses = Employee::all();
-        return view('employees.create', compact('positions', 'bosses'));
+        $countries = Country::all();
+        return view('employees.create', compact('positions', 'bosses', 'countries'));
     }
 
-    public function storeAction(Request $request)
+
+    public function store(Request $request)
     {
         $request->validate([
             'first_name' => 'required',
@@ -29,30 +39,49 @@ class EmployeeController extends Controller
             'identification' => 'required|unique:employees',
             'address' => 'required',
             'phone' => 'required',
-            'country' => 'required',
-            'city' => 'required',
+            'city_id' => 'required|exists:cities,id',
+            'country_id' => 'required|exists:countries,id',
             'boss_id' => 'nullable|exists:employees,id'
         ]);
 
+        // valida que la ciudad pertenece al país seleccionado
+        $city = City::findOrFail($request->city_id);
+        if ($city->country_id != $request->country_id) {
+            return redirect()->back()->withErrors(['city_id' => 'La ciudad seleccionada no pertenece al país elegido.'])->withInput();
+        }
+
+        // se crea el empleado
         $employee = Employee::create($request->all());
         $employee->positions()->attach($request->positions);
 
         return redirect()->route('employees.index')->with('success', 'Empleado creado correctamente');
     }
 
-    public function showAction(Employee $employee)
+    /**
+     * mostrar un empleado
+     */
+    public function show(Employee $employee)
     {
         return view('employees.show', compact('employee'));
     }
 
-    public function editAction(Employee $employee)
+    /**
+     * editar empleado
+     */
+    public function edit(Employee $employee)
     {
         $positions = Position::all();
         $bosses = Employee::all();
-        return view('employees.edit', compact('employee', 'positions', 'bosses'));
+        $countries = Country::all();
+        $cities = City::where('country_id', $employee->city->country_id)->get(); // Obtener ciudades del país actual
+
+        return view('employees.edit', compact('employee', 'positions', 'bosses', 'countries', 'cities'));
     }
 
-    public function updateAction(Request $request, Employee $employee)
+    /**
+     * Actualizar empleado
+     */
+    public function update(Request $request, Employee $employee)
     {
         $request->validate([
             'first_name' => 'required',
@@ -60,20 +89,39 @@ class EmployeeController extends Controller
             'identification' => "required|unique:employees,identification,$employee->id",
             'address' => 'required',
             'phone' => 'required',
-            'country' => 'required',
-            'city' => 'required',
+            'city_id' => 'required|exists:cities,id',
+            'country_id' => 'required|exists:countries,id',
             'boss_id' => 'nullable|exists:employees,id'
         ]);
 
+        // valida que la ciudad pertenece al país seleccionado
+        $city = City::findOrFail($request->city_id);
+        if ($city->country_id != $request->country_id) {
+            return redirect()->back()->withErrors(['city_id' => 'La ciudad seleccionada no pertenece al país elegido.'])->withInput();
+        }
+
+        // Actualiza empleado
         $employee->update($request->all());
         $employee->positions()->sync($request->positions);
 
         return redirect()->route('employees.index')->with('success', 'Empleado actualizado correctamente');
     }
 
-    public function deleteAction(Employee $employee)
+    /**
+     * eliminar empleado
+     */
+    public function destroy(Employee $employee)
     {
         $employee->delete();
         return redirect()->route('employees.index')->with('success', 'Empleado eliminado correctamente');
+    }
+
+    /**
+     * Obtener las ciudades de un país
+     */
+    public function getCities($country_id)
+    {
+        $cities = City::where('country_id', $country_id)->get();
+        return response()->json($cities);
     }
 }
